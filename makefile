@@ -1,23 +1,30 @@
-LATEX_CMD=pdflatex
+CC = g++
+CFLAGS = -Wall -g
 
-all: refman.pdf
+# Define the build directory
+BUILD_DIR = build
 
-pdf: refman.pdf
+SRCS := $(wildcard *.cpp)
+OBJS = $(SRCS:.cpp=.o)
+MAIN = $(BUILD_DIR)/program  # Change the path of the executable in the build directory
 
-refman.pdf: clean refman.tex
-	$(LATEX_CMD) refman
-	makeindex refman.idx
-	$(LATEX_CMD) refman
-	latex_count=8 ; \
-	while egrep -s 'Rerun (LaTeX|to get cross-references right)' refman.log && [ $$latex_count -gt 0 ] ;\
-	    do \
-	      echo "Rerunning latex...." ;\
-	      $(LATEX_CMD) refman ;\
-	      latex_count=`expr $$latex_count - 1` ;\
-	    done
-	makeindex refman.idx
-	$(LATEX_CMD) refman
+# Make sure the build directory exists
+$(shell mkdir -p $(BUILD_DIR))
 
+all: $(MAIN)
+
+$(MAIN): $(OBJS)
+	$(CC) $(CFLAGS) -o $(MAIN) $(OBJS)
+	cp $(MAIN) .  # Copy the executable to the main directory
+
+%.o: %.cpp
+	$(CC) $(CFLAGS) -c $< -o $@
+
+run: $(MAIN)
+	./$(MAIN)
+
+leak:
+	valgrind --leak-check=full ./program
 
 clean:
-	rm -f *.ps *.dvi *.aux *.toc *.idx *.ind *.ilg *.log *.out *.brf *.blg *.bbl refman.pdf
+	$(RM) *.o *~ program
